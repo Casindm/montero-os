@@ -10,26 +10,68 @@ normalized:
     xor ax, ax
     mov ds, ax
     mov es, ax
+
     mov ss, ax
     mov sp, 0x7C00
 
     cld
 
-    ; 1. Cargar la GDT
+    ; Guardar el dispositivo de arranque
+    mov [boot_drive], dl
+
+    ; ------------------------------------------------
+    ; 1. Leer el segundo sector del disco
+    ; ------------------------------------------------
+
+    sti
+
+    mov ah, 0x02          ; Funcion BIOS: leer sectores
+    mov al, 1             ; Leer un sector
+    mov ch, 0             ; Cilindro 0
+    mov cl, 2             ; Sector 2
+    mov dh, 0             ; Cabezal 0
+    mov dl, [boot_drive]  ; Dispositivo de arranque
+
+    mov bx, 0x8000        ; Destino: ES:BX = 0000:8000
+
+    int 0x13
+
+    cli
+
+    jc disk_error
+
+    ; Restaurar segmentos y direccion de cadena
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    cld
+
+    ; ------------------------------------------------
+    ; 2. Cargar la GDT
+    ; ------------------------------------------------
+
     lgdt [gdt_descriptor]
 
-    ; 2. Activar el modo protegido (CR0.PE = 1)
+    ; ------------------------------------------------
+    ; 3. Activar el modo protegido
+    ; ------------------------------------------------
+
     mov eax, cr0
     or eax, 1
     mov cr0, eax
 
-    ; 3. Salto lejano: selector de codigo + direccion
+    ; Salto lejano: cargar CS = 0x08
     jmp dword 0x08:protected_mode
+
+; ----------------------------------------------------
+; Codigo de 32 bits
+; ----------------------------------------------------
 
 bits 32
 
 protected_mode:
-    ; 4. Cargar el selector de datos en los segmentos
+
+    ; Cargar selectores de datos
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -37,45 +79,60 @@ protected_mode:
     mov gs, ax
     mov ss, ax
 
-    ; 5. Preparar la pila de 32 bits
+    ; Preparar la pila
     mov esp, 0x90000
 
-    ; 6. Escribir directamente en la memoria VGA
-    mov esi, message
-    mov edi, 0xB8000
+    ; Transferir el control al segundo sector
+    jmp 0x8000
 
-    ; Atributo VGA: blanco brillante sobre negro
-    mov ah, 0x0F
+; ----------------------------------------------------
+; Error de lectura del disco (modo real)
+; ----------------------------------------------------
 
-print:
+bits 16
+
+disk_error:
+    xor ax, ax
+    mov ds, ax
+
+    mov si, error_message
+
+print_error:
     lodsb
     cmp al, 0
-    je halt
+    je error_halt
 
-    mov [edi], ax
-    add edi, 2
-    jmp print
+    mov ah, 0x0E
+    int 0x10
+    jmp print_error
 
-halt:
+error_halt:
     cli
 
-hang:
+error_loop:
     hlt
-    jmp hang
+    jmp error_loop
 
-; GDT: descriptor nulo, codigo de 32 bits y datos de 32 bits
+; ----------------------------------------------------
+; Datos y GDT
+; ----------------------------------------------------
+
+boot_drive db 0
+
+error_message db 'Error leyendo el segundo sector!', 0
+
 align 8
+
 gdt:
     dq 0x0000000000000000
     dq 0x00CF9A000000FFFF
     dq 0x00CF92000000FFFF
+
 gdt_end:
 
 gdt_descriptor:
     dw gdt_end - gdt - 1
     dd gdt
-
-message db 'Hola desde modo protegido!', 0
 
 times 510 - ($ - $$) db 0
 dw 0xAA55
