@@ -10,68 +10,48 @@ normalized:
     xor ax, ax
     mov ds, ax
     mov es, ax
-
     mov ss, ax
     mov sp, 0x7C00
 
     cld
 
-    ; Guardar el dispositivo de arranque
     mov [boot_drive], dl
 
-    ; ------------------------------------------------
-    ; 1. Leer el segundo sector del disco
-    ; ------------------------------------------------
+    ; Dirección física destino: 0x10000
+    mov ax, 0x1000
+    mov es, ax
+    xor bx, bx
 
-    sti
+    ; Cargar el kernel desde los sectores 2-5.
+    mov ah, 0x02
+    mov al, 4    ; Nº sectores
+    mov ch, 0    ; Cilindro
+    mov cl, 2    ; Sector inicio
+    mov dh, 0    ; Cabezal
 
-    mov ah, 0x02          ; Funcion BIOS: leer sectores
-    mov al, 4             ; Leer 4 sectores
-    mov ch, 0             ; Cilindro 0
-    mov cl, 2             ; Sector 2
-    mov dh, 0             ; Cabezal 0
-    mov dl, [boot_drive]  ; Dispositivo de arranque
-
-    mov bx, 0x8000        ; Destino: ES:BX = 0000:8000
-
+    mov dl, [boot_drive]
     int 0x13
-
-    cli
 
     jc disk_error
 
-    ; Restaurar segmentos y direccion de cadena
+    ; Preparar la transición a modo protegido.
+    cli
+
     xor ax, ax
     mov ds, ax
     mov es, ax
-    cld
-
-    ; ------------------------------------------------
-    ; 2. Cargar la GDT
-    ; ------------------------------------------------
 
     lgdt [gdt_descriptor]
-
-    ; ------------------------------------------------
-    ; 3. Activar el modo protegido
-    ; ------------------------------------------------
 
     mov eax, cr0
     or eax, 1
     mov cr0, eax
 
-    ; Salto lejano: cargar CS = 0x08
     jmp dword 0x08:protected_mode
-
-; ----------------------------------------------------
-; Codigo de 32 bits
-; ----------------------------------------------------
 
 bits 32
 
 protected_mode:
-
-    ; Cargar selectores de datos
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -79,47 +59,34 @@ protected_mode:
     mov gs, ax
     mov ss, ax
 
-    ; Preparar la pila
     mov esp, 0x90000
 
-    ; Transferir el control al segundo sector
-    jmp 0x8000
-
-; ----------------------------------------------------
-; Error de lectura del disco (modo real)
-; ----------------------------------------------------
+    ; Transferir el control al kernel.
+    jmp 0x10000
 
 bits 16
 
 disk_error:
-    xor ax, ax
-    mov ds, ax
-
     mov si, error_message
 
 print_error:
     lodsb
-    cmp al, 0
-    je error_halt
+    test al, al
+    jz halt
 
     mov ah, 0x0E
     int 0x10
     jmp print_error
 
-error_halt:
+halt:
     cli
 
-error_loop:
+hang:
     hlt
-    jmp error_loop
-
-; ----------------------------------------------------
-; Datos y GDT
-; ----------------------------------------------------
+    jmp hang
 
 boot_drive db 0
-
-error_message db 'Error leyendo el segundo sector!', 0
+error_message db 'Error loading kernel!', 0
 
 align 8
 
