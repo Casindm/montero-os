@@ -27,6 +27,8 @@ hang:
     hlt
     jmp hang
 
-message db 'Hola desde nuestro segundo sector!', 0
-
 times 512 - ($ - $$) db 0
+
+message db 'Hola desde nuestro segundo bloque del segundo sector!', 0
+
+times 2048 - ($ - $$) db 0

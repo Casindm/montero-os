@@ -26,7 +26,7 @@ normalized:
     sti
 
     mov ah, 0x02          ; Funcion BIOS: leer sectores
-    mov al, 1             ; Leer un sector
+    mov al, 4             ; Leer 4 sectores
     mov ch, 0             ; Cilindro 0
     mov cl, 2             ; Sector 2
     mov dh, 0             ; Cabezal 0
