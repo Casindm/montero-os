@@ -1,3 +1,8 @@
+int global_counter = 10;
+int global_status;
+
+static const char kernel_name[] = "MonteroOS";
+
 void kernel_main(void)
 {
     const char *message = "Hola desde nuestro primer kernel en C!";
