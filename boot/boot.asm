@@ -15,10 +15,13 @@ normalized:
 
     cld
 
+    ;_____________________    
+    ; CARGAMOS loader.bin ;
+    ;---------------------
     mov [boot_drive], dl
 
     ; Dirección física destino: 0x10000
-    mov ax, 0x1000
+    mov ax, 0x0800
     mov es, ax
     xor bx, bx
 
@@ -62,7 +65,7 @@ protected_mode:
     mov esp, 0x90000
 
     ; Transferir el control al kernel.
-    jmp 0x10000
+    jmp 0x8000
 
 bits 16
 

@@ -3,4 +3,5 @@
 *.test
 *.bin
 *.o
+*.s
 build/*
