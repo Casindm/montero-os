@@ -6,36 +6,36 @@ start:
 
 normalized:
     cli
+    cld
 
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
-
-    cld
-
-    ;_____________________    
-    ; CARGAMOS loader.bin ;
-    ;---------------------
     mov [boot_drive], dl
 
-    ; Dirección física destino: 0x10000
+    ; 1. Cargar 4 sectores para Loader en 0x8000
     mov ax, 0x0800
     mov es, ax
     xor bx, bx
 
-    ; Cargar el kernel desde los sectores 2-5.
-    mov ah, 0x02
-    mov al, 4    ; Nº sectores
-    mov ch, 0    ; Cilindro
-    mov cl, 2    ; Sector inicio
-    mov dh, 0    ; Cabezal
+    mov [floppy_sectors], 4
+    mov [floppy_cylinder], 0
+    mov [floppy_start], 2
+    mov [floppy_head], 0
+    call load_floppy
 
-    mov dl, [boot_drive]
-    int 0x13
+    ; 2. Cargar 4 sectores para Kernel en 0x20000
+    mov ax, 0x2000
+    mov es, ax
+    xor bx, bx
 
-    jc disk_error
+    mov [floppy_sectors], 4
+    mov [floppy_cylinder], 0
+    mov [floppy_start], 6
+    mov [floppy_head], 0
+    call load_floppy
 
     ; Preparar la transición a modo protegido.
     cli
@@ -89,15 +89,30 @@ hang:
     jmp hang
 
 boot_drive db 0
+floppy_sectors db 0
+floppy_cylinder db 0
+floppy_head db 0
+floppy_start db 0
 error_message db 'Error loading kernel!', 0
 
-align 8
+load_floppy:
+    mov ah, 0x02
+    mov al, [floppy_sectors]
+    mov ch, [floppy_cylinder]
+    mov cl, [floppy_start]
+    mov dh, [floppy_head]
 
+    mov dl, [boot_drive]
+    int 0x13
+
+    jc disk_error
+    ret
+
+align 8
 gdt:
     dq 0x0000000000000000
     dq 0x00CF9A000000FFFF
     dq 0x00CF92000000FFFF
-
 gdt_end:
 
 gdt_descriptor:

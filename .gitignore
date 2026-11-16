@@ -4,4 +4,7 @@
 *.bin
 *.o
 *.s
+*.elf
+*.gdbinit
 build/*
+man/

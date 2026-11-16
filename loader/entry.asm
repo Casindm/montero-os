@@ -12,5 +12,5 @@ _load:
     call loader_main
 
 .hang:
-    htl
+    hlt
     jmp .hang
