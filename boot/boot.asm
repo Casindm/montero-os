@@ -30,19 +30,21 @@ normalized:
     ; 2. Cargar 64 sectores para ELF raw en 0x10000
     mov ax, 0x1000
     mov es, ax
-    xor bx, bx
 
-    mov si, 0   ; Inicializamos total de sectores
-    mov al, 1   ; Inicializamos cabezal
-    mov ah, -1  ; Inicializamos cilindro
+    mov si, 0                       ; Inicializamos total de sectores
+    mov al, 1                       ; Inicializamos cabezal
+    mov ah, -1                      ; Inicializamos cilindro
 load_loop:
-    mov di, [current_sector] ; Reseteamos contador de sectores (0-18)
-    xor al, 1                ; Alternamos cabezal
-    jne inc_sector           ; Si volvemos al cabezal 0
-    inc ah                   ; Incrementamos cilindro
+    mov bx, [current_address]       ; Establecemos el offset de la direccion de carga
+    movzx di, byte [current_sector] ; Reseteamos contador de sectores (0-18)
+    mov cl, 0
+    xor al, 1                       ; Alternamos cabezal
+    jne inc_sector                  ; Si volvemos al cabezal 0
+    inc ah                          ; Incrementamos cilindro
 inc_sector:
     inc si
     inc di
+    inc cl
     cmp si, 64
     je finish_load
 
@@ -113,15 +115,18 @@ floppy_cylinder db 0
 floppy_head db 0
 floppy_start db 0
 current_sector db 1
+current_address dw 0
 error_message db 'Error loading kernel!', 0
 
 set_load:
-    mov [floppy_sectors], di
-    mov [floppy_cylinder], ah
-    mov dl, [current_sector]
-    inc dl
+    mov [floppy_sectors], cl   ; Almacenamos el numero de sectores a cargar
+    imul cl, cl, 512           ; Calculamos numero de  direcciones avanzadas
+    add [current_address], cl  ; Acumulamos el total de direcciones
+    mov dl, [current_sector]   ; Almacenamos el sector de pista actual
+    inc dl                     ; Obtenemos el sector siguiente (sector de inicio)
     mov [floppy_start], dl
     mov [floppy_head], al
+    mov [floppy_cylinder], ah
 
 load_floppy:
     push ax
