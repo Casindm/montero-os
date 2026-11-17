@@ -49,24 +49,12 @@ inc_sector:
     cmp di, 18
     jne inc_sector
 
-    mov dl, 19               ; Total sectors + 1
-    sub dl, [current_sector] ; Numero de sectores a cargar
-    mov [floppy_sectors], dl
-    mov [floppy_cylinder], ah
-    mov dl, [current_sector]
-    mov [floppy_start], dl
-    mov [floppy_head], al
-    call load_floppy
-    mov [current_sector], 1  ; Reinicializamos el sector de inicio
+    call set_load
+    mov [current_sector], 0  ; Reinicializamos el sector de inicio
     jmp load_loop
 
 finish_load:
-    mov [floppy_sectors], di
-    mov [floppy_cylinder], ah
-    mov dl, [current_sector]
-    mov [floppy_start], dl
-    mov [floppy_head], al
-    call load_floppy
+    call set_load
 
     ; 3. Preparar la transición a modo protegido.
     cli
@@ -124,8 +112,17 @@ floppy_sectors db 0
 floppy_cylinder db 0
 floppy_head db 0
 floppy_start db 0
-current_sector db 2
+current_sector db 1
 error_message db 'Error loading kernel!', 0
+
+set_load:
+    sub di, [current_sector] ; Numero de sectores a cargar
+    mov [floppy_sectors], di
+    mov [floppy_cylinder], ah
+    mov dl, [current_sector]
+    inc dl
+    mov [floppy_start], dl
+    mov [floppy_head], al
 
 load_floppy:
     push ax
