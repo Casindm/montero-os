@@ -36,10 +36,10 @@ normalized:
     mov al, 1   ; Inicializamos cabezal
     mov ah, -1  ; Inicializamos cilindro
 load_loop:
-    mov di, 0   ; Reseteamos contador de sectores (0-18)
-    xor al, 1   ; Alternamos cabezal
-    jne inc_sector
-    inc ah      ; Incrementamos cilindro
+    mov di, [current_sector] ; Reseteamos contador de sectores (0-18)
+    xor al, 1                ; Alternamos cabezal
+    jne inc_sector           ; Si volvemos al cabezal 0
+    inc ah                   ; Incrementamos cilindro
 inc_sector:
     inc si
     inc di
@@ -116,7 +116,6 @@ current_sector db 1
 error_message db 'Error loading kernel!', 0
 
 set_load:
-    sub di, [current_sector] ; Numero de sectores a cargar
     mov [floppy_sectors], di
     mov [floppy_cylinder], ah
     mov dl, [current_sector]
@@ -131,10 +130,9 @@ load_floppy:
     mov ch, [floppy_cylinder]
     mov cl, [floppy_start]
     mov dh, [floppy_head]
-
     mov dl, [boot_drive]
-    int 0x13
 
+    int 0x13
     jc disk_error
     pop ax
     ret
