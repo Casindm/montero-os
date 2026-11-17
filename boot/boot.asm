@@ -41,10 +41,12 @@ load_loop:
     xor al, 1                       ; Alternamos cabezal
     jne inc_sector                  ; Si volvemos al cabezal 0
     inc ah                          ; Incrementamos cilindro
+
 inc_sector:
-    inc si
-    inc di
-    inc cl
+    inc si                          ; Numero total de sectores cargados
+    inc di                          ; Numero de sector dentro de la pista
+    inc cl                          ; Numero de sectores a solicitar en la lectura BIOS
+
     cmp si, 64
     je finish_load
 
@@ -120,8 +122,8 @@ error_message db 'Error loading kernel!', 0
 
 set_load:
     mov [floppy_sectors], cl   ; Almacenamos el numero de sectores a cargar
-    imul cl, cl, 512           ; Calculamos numero de  direcciones avanzadas
-    add [current_address], cl  ; Acumulamos el total de direcciones
+    shl cx, 9
+    add [current_address], cx  ; Acumulamos el total de direcciones
     mov dl, [current_sector]   ; Almacenamos el sector de pista actual
     inc dl                     ; Obtenemos el sector siguiente (sector de inicio)
     mov [floppy_start], dl
@@ -130,6 +132,7 @@ set_load:
 
 load_floppy:
     push ax
+    push si
     mov ah, 0x02
     mov al, [floppy_sectors]
     mov ch, [floppy_cylinder]
@@ -139,6 +142,7 @@ load_floppy:
 
     int 0x13
     jc disk_error
+    pop si
     pop ax
     ret
 
