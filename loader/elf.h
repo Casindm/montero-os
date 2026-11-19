@@ -1,0 +1,143 @@
+#ifndef ELF_H
+#define ELF_H
+
+#define ELF_MAGIC_0 0x7F
+#define ELF_MAGIC_1 'E'
+#define ELF_MAGIC_2 'L'
+#define ELF_MAGIC_3 'F'
+
+#define ELFCLASS32 1
+#define ELFDATA2LSB 1
+#define EV_CURRENT 1
+
+#define ET_EXEC 2
+#define EM_386 3
+
+#define EI_CLASS 4
+#define EI_DATA 5
+#define EI_VERSION 6
+
+#include <stdint.h>
+
+typedef struct {
+    uint8_t  e_ident[16];
+
+    uint16_t e_type;
+    uint16_t e_machine;
+    uint32_t e_version;
+    uint32_t e_entry;
+    uint32_t e_phoff;
+    uint32_t e_shoff;
+    uint32_t e_flags;
+
+    uint16_t e_ehsize;
+    uint16_t e_phentsize;
+    uint16_t e_phnum;
+    uint16_t e_shentsize;
+    uint16_t e_shnum;
+    uint16_t e_shstrndx;
+} Elf32Header;
+
+typedef struct {
+    uint32_t p_type;
+    uint32_t p_offset;
+    uint32_t p_vaddr;
+    uint32_t p_paddr;
+    uint32_t p_filesz;
+    uint32_t p_memsz;
+    uint32_t p_flags;
+    uint32_t p_align;
+} Elf32ProgramHeader;
+
+// Devuelve 1 si es un ELF32 valido para i386
+// En caso contrario devuelve 0
+int elf_validate_header(Elf32Header *header)
+{
+// Que el puntero no sea nulo.
+    if (header == 0)
+    {
+        return 0;
+    }
+
+// Que la firma mágica sea correcta.
+    if (header->e_ident[0] != ELF_MAGIC_0 ||
+        header->e_ident[1] != ELF_MAGIC_1 ||
+        header->e_ident[2] != ELF_MAGIC_2 ||
+        header->e_ident[3] != ELF_MAGIC_3 ) 
+    {
+        return 0;
+    }
+
+// Que el archivo sea ELF32.
+    if (header->e_ident[EI_CLASS] != ELFCLASS32)
+    {
+        return 0;
+    }
+
+// Que utilice little endian.
+    if (header->e_ident[EI_DATA] != ELFDATA2LSB)
+    {
+        return 0;
+    }
+
+// Que las versiones sean las esperadas.
+    if (header->e_ident[EI_VERSION] != EV_CURRENT ||
+        header->e_version != EV_CURRENT)
+    {
+        return 0;
+    }
+// Que sea un ejecutable para Intel 80386.
+    if (header->e_machine != EM_386)
+    {
+        return 0;
+    }
+
+// Que el tamaño declarado del ELF Header coincida con nuestra estructura.
+    if (header->e_ehsize != sizeof(Elf32Header))
+    {
+        return 0;
+    }
+
+// Que el tamaño declarado de cada Program Header coincida con nuestra estructura.
+    if (header->e_phentsize != sizeof(Elf32ProgramHeader))
+    {
+        return 0;
+    }
+
+// Que exista al menos un Program Header.
+    if (header->e_phnum == 0)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+static inline Elf32ProgramHeader *
+elf_get_program_headers(Elf32Header *header)
+{
+    uint8_t *elf = (uint8_t *)header;
+
+    return (Elf32ProgramHeader *)(elf + header->e_phoff);
+}
+
+static inline Elf32ProgramHeader *
+elf_get_program_header(Elf32Header *header, uint32_t index)
+{
+    Elf32ProgramHeader *program_headers =
+        elf_get_program_headers(header);
+
+    if (index >= header->e_phnum) {
+        return 0;
+    } 
+
+    return &program_headers[index - 1];
+}
+
+_Static_assert(sizeof(Elf32Header) == 52,
+               "Invalid ELF header size");
+
+_Static_assert(sizeof(Elf32ProgramHeader) == 32,
+               "Invalid ELF program header size");
+
+#endif
