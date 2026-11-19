@@ -123,6 +123,10 @@ static inline int elf_validate_header(Elf32Header *header)
 static inline Elf32ProgramHeader *
 elf_get_program_headers(Elf32Header *header)
 {
+    if (header == 0) {
+        return 0;
+    } 
+
     uint8_t *elf = (uint8_t *)header;
 
     return (Elf32ProgramHeader *)(elf + header->e_phoff);
@@ -131,14 +135,14 @@ elf_get_program_headers(Elf32Header *header)
 static inline Elf32ProgramHeader *
 elf_get_program_header(Elf32Header *header, uint32_t index)
 {
-    if (index == 0 || index >= header->e_phnum) {
+    if (header == 0 || index >= header->e_phnum) {
         return 0;
     } 
 
     Elf32ProgramHeader *program_headers =
         elf_get_program_headers(header);
 
-    return &program_headers[index - 1];
+    return &program_headers[index];
 }
 
 _Static_assert(sizeof(Elf32Header) == 52,
