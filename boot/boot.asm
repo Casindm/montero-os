@@ -122,6 +122,7 @@ error_message db 'Error loading kernel!', 0
 
 set_load:
     mov [floppy_sectors], cl   ; Almacenamos el numero de sectores a cargar
+    movzx cx, cl
     shl cx, 9
     add [current_address], cx  ; Acumulamos el total de direcciones
     mov dl, [current_sector]   ; Almacenamos el sector de pista actual

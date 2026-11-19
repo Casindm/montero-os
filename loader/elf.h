@@ -51,7 +51,7 @@ typedef struct {
 
 // Devuelve 1 si es un ELF32 valido para i386
 // En caso contrario devuelve 0
-int elf_validate_header(Elf32Header *header)
+static inline int elf_validate_header(Elf32Header *header)
 {
 // Que el puntero no sea nulo.
     if (header == 0)
@@ -86,6 +86,13 @@ int elf_validate_header(Elf32Header *header)
     {
         return 0;
     }
+
+// Que se corresponda con el tipo EXEC
+    if (header->e_type != ET_EXEC)
+    {
+        return 0;
+    }
+
 // Que sea un ejecutable para Intel 80386.
     if (header->e_machine != EM_386)
     {
@@ -124,12 +131,12 @@ elf_get_program_headers(Elf32Header *header)
 static inline Elf32ProgramHeader *
 elf_get_program_header(Elf32Header *header, uint32_t index)
 {
-    Elf32ProgramHeader *program_headers =
-        elf_get_program_headers(header);
-
-    if (index >= header->e_phnum) {
+    if (index == 0 || index >= header->e_phnum) {
         return 0;
     } 
+
+    Elf32ProgramHeader *program_headers =
+        elf_get_program_headers(header);
 
     return &program_headers[index - 1];
 }
