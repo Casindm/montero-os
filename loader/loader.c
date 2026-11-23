@@ -35,7 +35,21 @@ void loader_main(void)
 
         if (program_header->p_type == PT_LOAD)
         {
-            // Por implementar
+            if (elf_validate_program_header(header, program_header) == 0)
+            {
+                const char *message = "ERROR: Detectado segmento invalido";
+                print_message(message);
+
+                halt();
+            }
+
+            memory_copy((uint8_t *)program_header->p_paddr,
+                        (uint8_t *)0x10000 + program_header->p_offset,
+                        program_header->p_filesz);
+
+            memory_set((uint8_t *)program_header->p_addr + program_header->p_filesz,
+                       0,
+                       program_header->memsz - program_header->filesz);
         }
     }
 

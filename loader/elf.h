@@ -18,6 +18,8 @@
 #define EI_VERSION 6
 
 #define KERNEL_ELF_SIZE 32768
+#define KERNEL_MIN_ADDR 0x20000
+#define KERNEL_MAX_ADDR 0x80000
 
 #include <stdint.h>
 
@@ -150,8 +152,15 @@ static inline int elf_validate_program_header(
         return 0;
     }
 
-// Que no se desborde el espacio de direcciones de 32bits
-    if ((UINT32_MAX - program_header->p_paddr) < program_header->p_memsz)
+// Que la dirección de carga no exceda el limite establecido para el Kernel
+    if (KERNEL_MAX_ADDR < program_header->p_paddr)
+    {
+        return 0;
+    }
+
+// Que el espacio de memoria este dentro del designado para el Kernel
+    if (KERNEL_MIN_ADDR > program_header->p_paddr ||
+       (KERNEL_MAX_ADDR - program_header->p_paddr) < program_header->p_memsz)
     {
         return 0;
     }
