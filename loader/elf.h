@@ -17,6 +17,10 @@
 #define EI_DATA 5
 #define EI_VERSION 6
 
+#define PF_X 1
+#define PF_W 2
+#define PF_R 4
+
 #define KERNEL_ELF_SIZE 32768
 #define KERNEL_MIN_ADDR 0x20000
 #define KERNEL_MAX_ADDR 0x80000
@@ -173,6 +177,25 @@ static inline int elf_validate_program_header(
 // Que el espacio de memoria este dentro del designado para el Kernel
     if (KERNEL_MIN_ADDR > program_header->p_paddr ||
        (KERNEL_MAX_ADDR - program_header->p_paddr) < program_header->p_memsz)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+static inline int elf_validate_entry_point(
+    Elf32Header *header, 
+    Elf32ProgramHeader* program_header )
+{
+// Que el punto de entrada este dentro del segmento
+    if (header->e_entry < program_header->p_vaddr)
+    {
+        return 0;
+    }
+
+// Que el punto de entrada no exceda el espacio definido del segmento
+    if (header->e_entry - program_header->p_vaddr >= program_header->p_memsz)
     {
         return 0;
     }

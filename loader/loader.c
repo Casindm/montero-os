@@ -50,6 +50,12 @@ void loader_main(void)
             memory_set((uint8_t *)program_header->p_paddr + program_header->p_filesz,
                        0,
                        program_header->p_memsz - program_header->p_filesz);
+
+            if (elf_validate_entry_point(header, program_header) != 0 &&
+                program_header->p_flags & 0x01 == PF_X)
+            {
+                // Por implementar
+            }
         }
     }
 
