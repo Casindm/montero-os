@@ -17,6 +17,8 @@
 #define EI_DATA 5
 #define EI_VERSION 6
 
+#define KERNEL_ELF_SIZE 32768
+
 #include <stdint.h>
 
 typedef struct {
@@ -113,6 +115,43 @@ static inline int elf_validate_header(Elf32Header *header)
 
 // Que exista al menos un Program Header.
     if (header->e_phnum == 0)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+static inline int elf_validate_program_header(
+    Elf32Header *header,
+    Elf32ProgramHeader *program_header )
+{
+// Que ninguno de los punteros sea nulo
+    if (header == 0 || program_header == 0)
+    {
+        return 0;
+    }
+
+// Que FileSiz no sea mayor que MemSiz
+    if (program_header->p_filesz > program_header->p_memsz)
+    {
+        return 0;
+    }
+
+// Que el inicio del segmento este dentro del espacio reservado para el ELF
+    if (KERNEL_ELF_SIZE < program_header->p_offset)
+    {
+        return 0;
+    }
+
+// Que el contenido del segmento no exceda el tamaño reservado para el ELF
+    if ((KERNEL_ELF_SIZE - program_header->p_offset) < program_header->p_filesz)
+    {
+        return 0;
+    }
+
+// Que no se desborde el espacio de direcciones de 32bits
+    if ((UINT32_MAX - program_header->p_paddr) < program_header->p_memsz)
     {
         return 0;
     }
