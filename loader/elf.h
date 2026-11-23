@@ -121,6 +121,18 @@ static inline int elf_validate_header(Elf32Header *header)
         return 0;
     }
 
+// Que el inicio del Program Header este dentro del espacio resrvado al ELF
+    if (header->e_phoff > KERNEL_ELF_SIZE)
+    {
+        return 0;
+    }
+
+// Que la longitud de todos los Program Header esten incluidos en el espacio reservado 
+    if (header->e_phnum > (KERNEL_ELF_SIZE - header->e_phoff) / header->e_phentsize)
+    {
+        return 0;
+    }
+
     return 1;
 }
 

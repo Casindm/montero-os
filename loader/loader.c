@@ -44,12 +44,12 @@ void loader_main(void)
             }
 
             memory_copy((uint8_t *)program_header->p_paddr,
-                        (uint8_t *)0x10000 + program_header->p_offset,
+                        (uint8_t *)header + program_header->p_offset,
                         program_header->p_filesz);
 
-            memory_set((uint8_t *)program_header->p_addr + program_header->p_filesz,
+            memory_set((uint8_t *)program_header->p_paddr + program_header->p_filesz,
                        0,
-                       program_header->memsz - program_header->filesz);
+                       program_header->p_memsz - program_header->p_filesz);
         }
     }
 
