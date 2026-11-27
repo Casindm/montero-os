@@ -33,8 +33,7 @@ void loader_main(void)
             // Validacion del segmento
             if (elf_validate_program_header(header, program_header) == 0)
             {
-                const char *message = "ERROR: Detectado segmento invalido";
-                print_message(message);
+                print_message("ERROR: Detectado segmento invalido");
 
                 halt();
             }

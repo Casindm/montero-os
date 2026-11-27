@@ -149,7 +149,8 @@ static inline int elf_validate_header(Elf32Header *header)
 // En caso contrario devuelve 0
 static inline int elf_validate_program_header(
     Elf32Header *header,
-    Elf32ProgramHeader *program_header)
+    Elf32ProgramHeader *program_header
+)
 {
 // Que ninguno de los punteros sea nulo
     if (header == 0 || program_header == 0)
@@ -202,7 +203,8 @@ static inline int elf_validate_program_header(
 // en el segmento designado
 static inline int elf_validate_entry_point(
     Elf32Header *header, 
-    Elf32ProgramHeader* program_header)
+    Elf32ProgramHeader* program_header
+)
 {
 // Que el punto de entrada este dentro del segmento
     if (header->e_entry < program_header->p_vaddr)

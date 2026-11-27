@@ -1,4 +1,7 @@
+#include "idt.h"
+
 void print_message(const char *message);
+void exception_divide_by_zero(void);
 void halt(void);
 
 int global_counter = 10;
@@ -8,8 +11,8 @@ static const char kernel_name[] = "MonteroOS";
 
 void kernel_main(void)
 {
-    const char *message = "Hola desde nuestro primer kernel en C!";
-    print_message(message);
+    idt_init();
+    print_message("Hola desde nuestro primer kernel en C!");
 
     halt();
 }
@@ -23,6 +26,11 @@ void print_message(const char *message)
     }
 }
 
+void exception_divide_by_zero(void)
+{
+    print_message("EXCEPTION: Division By Zero");
+    halt();
+}
 
 void halt(void)
 {

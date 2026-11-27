@@ -56,12 +56,21 @@ $(BUILD)/loader.bin: $(BUILD)/loader.elf
 $(BUILD)/kernel_entry.o: kernel/entry.asm | $(BUILD)
 	$(NASM) -f elf32 $< -o $@
 
-$(BUILD)/kernel.o: kernel/kernel.c | $(BUILD)
+$(BUILD)/isr.o: kernel/isr.asm | $(BUILD)
+	$(NASM) -f elf32 $< -o $@
+
+$(BUILD)/kernel.o: kernel/kernel.c kernel/idt.h | $(BUILD)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD)/kernel.elf: $(BUILD)/kernel_entry.o $(BUILD)/kernel.o kernel/linker.ld
+$(BUILD)/idt.o: kernel/idt.c kernel/idt.h | $(BUILD)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD)/kernel.elf: $(BUILD)/kernel_entry.o $(BUILD)/isr.o $(BUILD)/kernel.o $(BUILD)/idt.o kernel/linker.ld
 	$(LD) -m elf_i386 -T kernel/linker.ld -o $@ \
-		$(BUILD)/kernel_entry.o $(BUILD)/kernel.o
+		$(BUILD)/kernel_entry.o \
+		$(BUILD)/kernel.o \
+		$(BUILD)/idt.o \
+		$(BUILD)/isr.o
 	@size=$$(wc -c < $@ | tr -d '[:space:]'); \
 	if [ "$$size" -gt $(KERNEL_SIZE) ]; then \
 		echo "ERROR: El Kernel ELF supera $(KERNEL_SIZE) bytes"; \
